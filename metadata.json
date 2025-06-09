@@ -1,5 +1,0 @@
-{
-  "name": "AI Practitioner Canvas",
-  "description": "A platform for building, testing, and deploying AI applications with a Python-first approach and a TypeScript UI. Includes an AI-powered code generation assistant.",
-  "requestFramePermissions": []
-}
