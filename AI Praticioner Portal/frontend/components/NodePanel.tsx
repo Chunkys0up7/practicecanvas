@@ -1,5 +1,5 @@
 
-import React, from 'react';
+import React from 'react';
 import { Handle, Position, NodeProps } from 'reactflow';
 import { CanvasNodeData, ComponentType } from '../types';
 import { COMPONENT_TYPE_COLORS } from '../constants';
