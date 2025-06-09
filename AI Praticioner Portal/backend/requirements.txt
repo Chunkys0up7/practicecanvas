@@ -1,0 +1,14 @@
+fastapi==0.104.1
+uvicorn==0.24.0
+pydantic==2.4.2
+python-dotenv==1.0.0
+langchain==0.0.305
+crewai==0.1.1
+pydantic-ai==0.1.0
+autogen==0.2.0
+pytest==7.4.3
+pytest-cov==4.1.0
+black==23.11.0
+mypy==1.6.1
+pylint==3.0.2
+bandit==1.7.5
