@@ -1,4 +1,3 @@
-
 import React from 'react';
 import { Routes, Route, NavLink } from 'react-router-dom';
 import { NAV_ITEMS } from './constants';
@@ -7,6 +6,7 @@ import ComponentLibraryPage from './pages/ComponentLibraryPage';
 import AgentBuilderPage from './pages/AgentBuilderPage';
 import CodeGeneratorPage from './pages/CodeGeneratorPage';
 import DeploymentPage from './pages/DeploymentPage';
+import IdePage from './pages/IdePage';
 import { Layers } from 'lucide-react';
 
 const App: React.FC = () => {
@@ -44,6 +44,7 @@ const App: React.FC = () => {
           <Route path="/builder" element={<AgentBuilderPage />} />
           <Route path="/codegen" element={<CodeGeneratorPage />} />
           <Route path="/deploy" element={<DeploymentPage />} />
+          <Route path="/ide" element={<IdePage />} />
         </Routes>
       </main>
     </div>

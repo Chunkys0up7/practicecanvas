@@ -1,13 +1,13 @@
-
-import { Home, Blocks, Bot, Code2, Layers, Settings, Zap, Database, Terminal, FileText, Brain, LayoutDashboard, Share2, CloudCog } from 'lucide-react';
+import { Home, Blocks, Bot, Code2, Layers, Settings, Zap, Database, Terminal, FileText, Brain, LayoutDashboard, Share2, CloudCog, FileCode } from 'lucide-react';
 import { ComponentType } from './types';
 
 export const NAV_ITEMS = [
-  { name: 'Dashboard', href: '#/', icon: LayoutDashboard },
-  { name: 'Component Library', href: '#/components', icon: Blocks },
-  { name: 'Agent Builder', href: '#/builder', icon: Share2 },
-  { name: 'Code Generator', href: '#/codegen', icon: Code2 },
-  { name: 'Deployment', href: '#/deploy', icon: CloudCog },
+  { name: 'Dashboard', href: '/', icon: LayoutDashboard },
+  { name: 'Component Library', href: '/components', icon: Blocks },
+  { name: 'Agent Builder', href: '/builder', icon: Share2 },
+  { name: 'Code Generator', href: '/codegen', icon: Code2 },
+  { name: 'Deployment', href: '/deploy', icon: CloudCog },
+  { name: 'IDE', href: '/ide', icon: FileCode },
 ];
 
 export const MOCK_PROJECTS = [
