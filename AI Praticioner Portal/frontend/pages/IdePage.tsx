@@ -3,6 +3,7 @@ import EditorLayout from '../components/layout/EditorLayout';
 import Editor from '@monaco-editor/react';
 import { fileService } from '../services/fileService';
 import KeyboardShortcuts from '../components/editor/KeyboardShortcuts';
+import StatusBar from '../components/editor/StatusBar';
 
 const IdePage: React.FC = () => {
   const [currentFile, setCurrentFile] = useState<string | null>(null);
@@ -10,6 +11,7 @@ const IdePage: React.FC = () => {
   const [isLoading, setIsLoading] = useState(false);
   const [showShortcuts, setShowShortcuts] = useState(false);
   const [editorInstance, setEditorInstance] = useState<any>(null);
+  const [cursorPosition, setCursorPosition] = useState({ lineNumber: 1, column: 1 });
 
   const handleFileSelect = async (path: string) => {
     console.log('File selected:', path);
@@ -38,6 +40,15 @@ const IdePage: React.FC = () => {
 
   const handleEditorDidMount = (editor: any) => {
     setEditorInstance(editor);
+    
+    // Add cursor position change listener
+    editor.onDidChangeCursorPosition((e: any) => {
+      const position = e.position;
+      setCursorPosition({
+        lineNumber: position.lineNumber,
+        column: position.column
+      });
+    });
   };
 
   const handleKeyDown = useCallback((event: KeyboardEvent) => {
@@ -100,56 +111,64 @@ const IdePage: React.FC = () => {
 
   return (
     <EditorLayout onFileSelect={handleFileSelect}>
-      {currentFile ? (
-        <div className="h-full relative">
-          {isLoading ? (
-            <div className="absolute inset-0 flex items-center justify-center bg-gray-900 bg-opacity-50 z-10">
-              <div className="text-white">Loading file...</div>
-            </div>
-          ) : (
-            <Editor
-              height="100%"
-              defaultLanguage="typescript"
-              language={getLanguage(currentFile)}
-              value={fileContent}
-              onChange={handleEditorChange}
-              onMount={handleEditorDidMount}
-              theme="vs-dark"
-              options={{
-                minimap: { enabled: false },
-                fontSize: 14,
-                wordWrap: 'on',
-                automaticLayout: true,
-                scrollBeyondLastLine: false,
-                lineNumbers: 'on',
-                renderWhitespace: 'selection',
-                tabSize: 2,
-                insertSpaces: true,
-                quickSuggestions: true,
-                suggestOnTriggerCharacters: true,
-                acceptSuggestionOnEnter: 'on',
-                snippetSuggestions: 'inline',
-                wordBasedSuggestions: 'currentDocument',
-                parameterHints: {
-                  enabled: true
-                },
-                formatOnPaste: true,
-                formatOnType: true,
-                autoClosingBrackets: 'always',
-                autoClosingQuotes: 'always',
-                autoSurround: 'brackets',
-                bracketPairColorization: {
-                  enabled: true
-                }
-              }}
-            />
-          )}
-        </div>
-      ) : (
-        <div className="h-full flex items-center justify-center text-gray-400">
-          Select a file to start editing
-        </div>
-      )}
+      <div className="flex flex-col h-full">
+        {currentFile ? (
+          <div className="flex-1 relative">
+            {isLoading ? (
+              <div className="absolute inset-0 flex items-center justify-center bg-gray-900 bg-opacity-50 z-10">
+                <div className="text-white">Loading file...</div>
+              </div>
+            ) : (
+              <Editor
+                height="100%"
+                defaultLanguage="typescript"
+                language={getLanguage(currentFile)}
+                value={fileContent}
+                onChange={handleEditorChange}
+                onMount={handleEditorDidMount}
+                theme="vs-dark"
+                options={{
+                  minimap: { enabled: false },
+                  fontSize: 14,
+                  wordWrap: 'on',
+                  automaticLayout: true,
+                  scrollBeyondLastLine: false,
+                  lineNumbers: 'on',
+                  renderWhitespace: 'selection',
+                  tabSize: 2,
+                  insertSpaces: true,
+                  quickSuggestions: true,
+                  suggestOnTriggerCharacters: true,
+                  acceptSuggestionOnEnter: 'on',
+                  snippetSuggestions: 'inline',
+                  wordBasedSuggestions: 'currentDocument',
+                  parameterHints: {
+                    enabled: true
+                  },
+                  formatOnPaste: true,
+                  formatOnType: true,
+                  autoClosingBrackets: 'always',
+                  autoClosingQuotes: 'always',
+                  autoSurround: 'brackets',
+                  bracketPairColorization: {
+                    enabled: true
+                  }
+                }}
+              />
+            )}
+          </div>
+        ) : (
+          <div className="flex-1 flex items-center justify-center text-gray-400">
+            Select a file to start editing
+          </div>
+        )}
+        <StatusBar
+          currentFile={currentFile}
+          language={getLanguage(currentFile)}
+          lineNumber={cursorPosition.lineNumber}
+          column={cursorPosition.column}
+        />
+      </div>
       <KeyboardShortcuts
         isOpen={showShortcuts}
         onClose={() => setShowShortcuts(false)}
