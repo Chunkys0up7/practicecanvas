@@ -1,12 +1,15 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import EditorLayout from '../components/layout/EditorLayout';
 import Editor from '@monaco-editor/react';
 import { fileService } from '../services/fileService';
+import KeyboardShortcuts from '../components/editor/KeyboardShortcuts';
 
 const IdePage: React.FC = () => {
   const [currentFile, setCurrentFile] = useState<string | null>(null);
   const [fileContent, setFileContent] = useState<string>('');
   const [isLoading, setIsLoading] = useState(false);
+  const [showShortcuts, setShowShortcuts] = useState(false);
+  const [editorInstance, setEditorInstance] = useState<any>(null);
 
   const handleFileSelect = async (path: string) => {
     console.log('File selected:', path);
@@ -32,6 +35,37 @@ const IdePage: React.FC = () => {
       });
     }
   };
+
+  const handleEditorDidMount = (editor: any) => {
+    setEditorInstance(editor);
+  };
+
+  const handleKeyDown = useCallback((event: KeyboardEvent) => {
+    // Ctrl/Cmd + K to show shortcuts
+    if ((event.ctrlKey || event.metaKey) && event.key === 'k') {
+      event.preventDefault();
+      setShowShortcuts(true);
+    }
+    // Ctrl/Cmd + S to save
+    if ((event.ctrlKey || event.metaKey) && event.key === 's') {
+      event.preventDefault();
+      if (currentFile && editorInstance) {
+        const content = editorInstance.getValue();
+        fileService.saveFile(currentFile, content).catch((error) => {
+          console.error('Error saving file:', error);
+        });
+      }
+    }
+    // Esc to close shortcuts
+    if (event.key === 'Escape' && showShortcuts) {
+      setShowShortcuts(false);
+    }
+  }, [currentFile, editorInstance, showShortcuts]);
+
+  useEffect(() => {
+    window.addEventListener('keydown', handleKeyDown);
+    return () => window.removeEventListener('keydown', handleKeyDown);
+  }, [handleKeyDown]);
 
   // Get language from file extension
   const getLanguage = (path: string | null): string => {
@@ -79,6 +113,7 @@ const IdePage: React.FC = () => {
               language={getLanguage(currentFile)}
               value={fileContent}
               onChange={handleEditorChange}
+              onMount={handleEditorDidMount}
               theme="vs-dark"
               options={{
                 minimap: { enabled: false },
@@ -89,7 +124,23 @@ const IdePage: React.FC = () => {
                 lineNumbers: 'on',
                 renderWhitespace: 'selection',
                 tabSize: 2,
-                insertSpaces: true
+                insertSpaces: true,
+                quickSuggestions: true,
+                suggestOnTriggerCharacters: true,
+                acceptSuggestionOnEnter: 'on',
+                snippetSuggestions: 'inline',
+                wordBasedSuggestions: 'currentDocument',
+                parameterHints: {
+                  enabled: true
+                },
+                formatOnPaste: true,
+                formatOnType: true,
+                autoClosingBrackets: 'always',
+                autoClosingQuotes: 'always',
+                autoSurround: 'brackets',
+                bracketPairColorization: {
+                  enabled: true
+                }
               }}
             />
           )}
@@ -99,6 +150,10 @@ const IdePage: React.FC = () => {
           Select a file to start editing
         </div>
       )}
+      <KeyboardShortcuts
+        isOpen={showShortcuts}
+        onClose={() => setShowShortcuts(false)}
+      />
     </EditorLayout>
   );
 };
