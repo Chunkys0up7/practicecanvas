@@ -111,60 +111,82 @@ class FileService {
     return { content, language };
   }
 
-  async createFile(path: string): Promise<void> {
-    // Simulate API delay
-    await new Promise(resolve => setTimeout(resolve, 300));
-    
-    // Add to mock contents with default content
-    mockFileContents[path] = getDefaultContent(path);
-    
-    // Update mock structure
-    const parts = path.split('/');
-    let current = mockFileStructure;
-    
-    for (let i = 1; i < parts.length - 1; i++) {
-      const dir = current.children?.find(c => c.name === parts[i]);
-      if (dir && dir.type === 'directory') {
+  async createFile(path: string, initialContent?: string): Promise<void> {
+    try {
+      // Simulate API delay
+      await new Promise(resolve => setTimeout(resolve, 300));
+      
+      // Add to mock contents with provided content or default content
+      mockFileContents[path] = initialContent || getDefaultContent(path);
+      
+      // Update mock structure
+      const parts = path.split('/');
+      let current = mockFileStructure;
+      
+      for (let i = 1; i < parts.length - 1; i++) {
+        const dir = current.children?.find(c => c.name === parts[i]);
+        if (!dir || dir.type !== 'directory') {
+          throw new Error(`Directory not found: ${parts.slice(0, i + 1).join('/')}`);
+        }
         current = dir;
       }
+      
+      if (!current.children) {
+        current.children = [];
+      }
+      
+      // Check if file already exists
+      if (current.children.some(c => c.name === parts[parts.length - 1])) {
+        throw new Error(`File already exists: ${path}`);
+      }
+      
+      current.children.push({
+        name: parts[parts.length - 1],
+        path: path,
+        type: 'file'
+      });
+    } catch (error) {
+      console.error('Error creating file:', error);
+      throw error;
     }
-    
-    if (!current.children) {
-      current.children = [];
-    }
-    
-    current.children.push({
-      name: parts[parts.length - 1],
-      path: path,
-      type: 'file'
-    });
   }
 
   async createDirectory(path: string): Promise<void> {
-    // Simulate API delay
-    await new Promise(resolve => setTimeout(resolve, 300));
-    
-    // Update mock structure
-    const parts = path.split('/');
-    let current = mockFileStructure;
-    
-    for (let i = 1; i < parts.length - 1; i++) {
-      const dir = current.children?.find(c => c.name === parts[i]);
-      if (dir && dir.type === 'directory') {
+    try {
+      // Simulate API delay
+      await new Promise(resolve => setTimeout(resolve, 300));
+      
+      // Update mock structure
+      const parts = path.split('/');
+      let current = mockFileStructure;
+      
+      for (let i = 1; i < parts.length - 1; i++) {
+        const dir = current.children?.find(c => c.name === parts[i]);
+        if (!dir || dir.type !== 'directory') {
+          throw new Error(`Directory not found: ${parts.slice(0, i + 1).join('/')}`);
+        }
         current = dir;
       }
+      
+      if (!current.children) {
+        current.children = [];
+      }
+      
+      // Check if directory already exists
+      if (current.children.some(c => c.name === parts[parts.length - 1])) {
+        throw new Error(`Directory already exists: ${path}`);
+      }
+      
+      current.children.push({
+        name: parts[parts.length - 1],
+        path: path,
+        type: 'directory',
+        children: []
+      });
+    } catch (error) {
+      console.error('Error creating directory:', error);
+      throw error;
     }
-    
-    if (!current.children) {
-      current.children = [];
-    }
-    
-    current.children.push({
-      name: parts[parts.length - 1],
-      path: path,
-      type: 'directory',
-      children: []
-    });
   }
 
   async deleteFile(path: string): Promise<void> {
@@ -228,6 +250,39 @@ class FileService {
     
     // Update mock contents
     mockFileContents[path] = content;
+  }
+
+  async deleteDirectory(path: string): Promise<void> {
+    // Simulate API delay
+    await new Promise(resolve => setTimeout(resolve, 300));
+    
+    // Update mock structure
+    const parts = path.split('/');
+    let current = mockFileStructure;
+    
+    for (let i = 1; i < parts.length - 1; i++) {
+      const dir = current.children?.find(c => c.name === parts[i]);
+      if (dir && dir.type === 'directory') {
+        current = dir;
+      }
+    }
+    
+    if (current.children) {
+      // Remove all files in the directory from mock contents
+      const removeFilesFromContents = (node: FileNode) => {
+        if (node.type === 'file') {
+          delete mockFileContents[node.path];
+        } else if (node.children) {
+          node.children.forEach(removeFilesFromContents);
+        }
+      };
+
+      const dirToDelete = current.children.find(c => c.name === parts[parts.length - 1]);
+      if (dirToDelete && dirToDelete.type === 'directory') {
+        removeFilesFromContents(dirToDelete);
+        current.children = current.children.filter(c => c.name !== parts[parts.length - 1]);
+      }
+    }
   }
 }
 

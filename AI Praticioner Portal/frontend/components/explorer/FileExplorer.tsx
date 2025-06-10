@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { fileService } from '../../services/fileService';
 import { FileNode } from '../../types/file';
+import CreateFileModal from './CreateFileModal';
 
 interface FileExplorerProps {
   onFileSelect?: (path: string) => void;
@@ -12,16 +13,31 @@ interface ContextMenuState {
   node: FileNode;
 }
 
+interface ToastState {
+  message: string;
+  type: 'success' | 'error';
+  visible: boolean;
+}
+
 const FileExplorer: React.FC<FileExplorerProps> = ({ onFileSelect }) => {
   console.log('FileExplorer: onFileSelect prop =', onFileSelect);
   const [expandedDirs, setExpandedDirs] = useState<Set<string>>(new Set());
   const [fileStructure, setFileStructure] = useState<FileNode | null>(null);
   const [isLoading, setIsLoading] = useState(true);
   const [contextMenu, setContextMenu] = useState<ContextMenuState | null>(null);
+  const [toast, setToast] = useState<ToastState>({ message: '', type: 'success', visible: false });
+  const [isOperationInProgress, setIsOperationInProgress] = useState(false);
+  const [isCreateFileModalOpen, setIsCreateFileModalOpen] = useState(false);
+  const [createFileParentPath, setCreateFileParentPath] = useState('');
 
   useEffect(() => {
     loadFileStructure();
   }, []);
+
+  const showToast = (message: string, type: 'success' | 'error') => {
+    setToast({ message, type, visible: true });
+    setTimeout(() => setToast(prev => ({ ...prev, visible: false })), 3000);
+  };
 
   const loadFileStructure = async () => {
     try {
@@ -33,6 +49,7 @@ const FileExplorer: React.FC<FileExplorerProps> = ({ onFileSelect }) => {
       }
     } catch (error) {
       console.error('Error loading file structure:', error);
+      showToast('Failed to load file structure', 'error');
     } finally {
       setIsLoading(false);
     }
@@ -60,56 +77,86 @@ const FileExplorer: React.FC<FileExplorerProps> = ({ onFileSelect }) => {
   };
 
   const handleCreateFile = async (parentPath: string) => {
-    const name = prompt('Enter file name:');
-    if (!name) return;
+    setCreateFileParentPath(parentPath);
+    setIsCreateFileModalOpen(true);
+  };
 
-    const path = `${parentPath}/${name}`;
+  const handleCreateFileSubmit = async (name: string, content: string) => {
+    if (isOperationInProgress) return;
+    
+    const path = `${createFileParentPath}/${name}`;
+    setIsOperationInProgress(true);
     try {
-      await fileService.createFile(path);
+      await fileService.createFile(path, content);
       await loadFileStructure();
+      showToast('File created successfully', 'success');
     } catch (error) {
       console.error('Error creating file:', error);
+      showToast(error instanceof Error ? error.message : 'Failed to create file', 'error');
+    } finally {
+      setIsOperationInProgress(false);
     }
   };
 
   const handleCreateDirectory = async (parentPath: string) => {
+    if (isOperationInProgress) return;
+    
     const name = prompt('Enter directory name:');
     if (!name) return;
 
     const path = `${parentPath}/${name}`;
+    setIsOperationInProgress(true);
     try {
       await fileService.createDirectory(path);
       await loadFileStructure();
+      showToast('Directory created successfully', 'success');
     } catch (error) {
       console.error('Error creating directory:', error);
+      showToast(error instanceof Error ? error.message : 'Failed to create directory', 'error');
+    } finally {
+      setIsOperationInProgress(false);
     }
   };
 
   const handleDelete = async (path: string, type: 'file' | 'directory') => {
+    if (isOperationInProgress) return;
+    
     if (!confirm(`Are you sure you want to delete this ${type}?`)) return;
 
+    setIsOperationInProgress(true);
     try {
       if (type === 'file') {
         await fileService.deleteFile(path);
       } else {
-        // TODO: Implement directory deletion
+        await fileService.deleteDirectory(path);
       }
       await loadFileStructure();
+      showToast(`${type === 'file' ? 'File' : 'Directory'} deleted successfully`, 'success');
     } catch (error) {
       console.error(`Error deleting ${type}:`, error);
+      showToast(error instanceof Error ? error.message : `Failed to delete ${type}`, 'error');
+    } finally {
+      setIsOperationInProgress(false);
     }
   };
 
   const handleRename = async (oldPath: string, type: 'file' | 'directory') => {
+    if (isOperationInProgress) return;
+    
     const newName = prompt('Enter new name:');
     if (!newName) return;
 
     const newPath = oldPath.substring(0, oldPath.lastIndexOf('/') + 1) + newName;
+    setIsOperationInProgress(true);
     try {
       await fileService.renameFile(oldPath, newPath);
       await loadFileStructure();
+      showToast(`${type === 'file' ? 'File' : 'Directory'} renamed successfully`, 'success');
     } catch (error) {
       console.error(`Error renaming ${type}:`, error);
+      showToast(error instanceof Error ? error.message : `Failed to rename ${type}`, 'error');
+    } finally {
+      setIsOperationInProgress(false);
     }
   };
 
@@ -143,20 +190,6 @@ const FileExplorer: React.FC<FileExplorerProps> = ({ onFileSelect }) => {
           {isExpanded && node.children && (
             <div>
               {node.children.map(child => renderFileNode(child, level + 1))}
-              <div className="flex space-x-2 px-2" style={{ paddingLeft }}>
-                <button
-                  className="text-xs text-gray-400 hover:text-white"
-                  onClick={() => handleCreateFile(node.path)}
-                >
-                  + File
-                </button>
-                <button
-                  className="text-xs text-gray-400 hover:text-white"
-                  onClick={() => handleCreateDirectory(node.path)}
-                >
-                  + Directory
-                </button>
-              </div>
             </div>
           )}
         </div>
@@ -199,7 +232,7 @@ const FileExplorer: React.FC<FileExplorerProps> = ({ onFileSelect }) => {
   }
 
   return (
-    <div className="p-2">
+    <div className="p-2 relative">
       {renderFileNode(fileStructure)}
       {contextMenu && (
         <div
@@ -248,6 +281,26 @@ const FileExplorer: React.FC<FileExplorerProps> = ({ onFileSelect }) => {
           </button>
         </div>
       )}
+      {toast.visible && (
+        <div
+          className={`fixed bottom-4 right-4 px-4 py-2 rounded shadow-lg z-50 ${
+            toast.type === 'success' ? 'bg-green-500' : 'bg-red-500'
+          } text-white`}
+        >
+          {toast.message}
+        </div>
+      )}
+      {isOperationInProgress && (
+        <div className="absolute inset-0 bg-gray-900 bg-opacity-50 flex items-center justify-center">
+          <div className="text-white">Processing...</div>
+        </div>
+      )}
+      <CreateFileModal
+        isOpen={isCreateFileModalOpen}
+        onClose={() => setIsCreateFileModalOpen(false)}
+        onCreate={handleCreateFileSubmit}
+        parentPath={createFileParentPath}
+      />
     </div>
   );
 };
