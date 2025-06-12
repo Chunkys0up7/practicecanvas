@@ -4,6 +4,7 @@ import Editor from '@monaco-editor/react';
 import { fileService } from '../services/fileService';
 import KeyboardShortcuts from '../components/editor/KeyboardShortcuts';
 import StatusBar from '../components/editor/StatusBar';
+import { EditorToolbar } from '../components/editor/EditorToolbar';
 
 const IdePage: React.FC = () => {
   const [currentFile, setCurrentFile] = useState<string | null>(null);
@@ -12,6 +13,7 @@ const IdePage: React.FC = () => {
   const [showShortcuts, setShowShortcuts] = useState(false);
   const [editorInstance, setEditorInstance] = useState<any>(null);
   const [cursorPosition, setCursorPosition] = useState({ lineNumber: 1, column: 1 });
+  const [isDirty, setIsDirty] = useState(false);
 
   const handleFileSelect = async (path: string) => {
     console.log('File selected:', path);
@@ -21,9 +23,11 @@ const IdePage: React.FC = () => {
       const { content } = await fileService.getFileContent(path);
       console.log('File content loaded:', content);
       setFileContent(content);
+      setIsDirty(false);
     } catch (error) {
       console.error('Error loading file content:', error);
       setFileContent('');
+      setIsDirty(false);
     } finally {
       setIsLoading(false);
     }
@@ -32,10 +36,31 @@ const IdePage: React.FC = () => {
   const handleEditorChange = (value: string | undefined) => {
     if (value !== undefined && currentFile) {
       setFileContent(value);
-      fileService.saveFile(currentFile, value).catch((error) => {
-        console.error('Error saving file:', error);
-      });
+      setIsDirty(true);
     }
+  };
+
+  const handleSave = async () => {
+    if (currentFile && editorInstance) {
+      try {
+        const content = editorInstance.getValue();
+        await fileService.saveFile(currentFile, content);
+        setIsDirty(false);
+      } catch (error) {
+        console.error('Error saving file:', error);
+      }
+    }
+  };
+
+  const handleFormat = () => {
+    if (editorInstance) {
+      editorInstance.getAction('editor.action.formatDocument').run();
+    }
+  };
+
+  const handleSettings = () => {
+    // TODO: Implement settings dialog
+    console.log('Settings clicked');
   };
 
   const handleEditorDidMount = (editor: any) => {
@@ -60,18 +85,13 @@ const IdePage: React.FC = () => {
     // Ctrl/Cmd + S to save
     if ((event.ctrlKey || event.metaKey) && event.key === 's') {
       event.preventDefault();
-      if (currentFile && editorInstance) {
-        const content = editorInstance.getValue();
-        fileService.saveFile(currentFile, content).catch((error) => {
-          console.error('Error saving file:', error);
-        });
-      }
+      handleSave();
     }
     // Esc to close shortcuts
     if (event.key === 'Escape' && showShortcuts) {
       setShowShortcuts(false);
     }
-  }, [currentFile, editorInstance, showShortcuts]);
+  }, [showShortcuts]);
 
   useEffect(() => {
     window.addEventListener('keydown', handleKeyDown);
@@ -114,13 +134,19 @@ const IdePage: React.FC = () => {
       <div className="flex flex-col h-full">
         {currentFile ? (
           <div className="flex-1 relative">
+            <EditorToolbar
+              onSave={handleSave}
+              onFormat={handleFormat}
+              onSettings={handleSettings}
+              isDirty={isDirty}
+            />
             {isLoading ? (
               <div className="absolute inset-0 flex items-center justify-center bg-gray-900 bg-opacity-50 z-10">
                 <div className="text-white">Loading file...</div>
               </div>
             ) : (
               <Editor
-                height="100%"
+                height="calc(100% - 40px)" // Adjust height to account for toolbar
                 defaultLanguage="typescript"
                 language={getLanguage(currentFile)}
                 value={fileContent}

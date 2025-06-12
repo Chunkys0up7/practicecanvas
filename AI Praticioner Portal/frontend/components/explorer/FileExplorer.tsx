@@ -232,7 +232,7 @@ const FileExplorer: React.FC<FileExplorerProps> = ({ onFileSelect }) => {
   }
 
   return (
-    <div className="p-2 relative">
+    <div className="p-2 relative" data-testid="file-explorer">
       {renderFileNode(fileStructure)}
       {contextMenu && (
         <div

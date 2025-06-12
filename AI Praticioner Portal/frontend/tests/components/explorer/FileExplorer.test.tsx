@@ -1,22 +1,53 @@
 import '@testing-library/jest-dom';
 import React from 'react';
-import { render, screen, fireEvent } from '@testing-library/react';
+import { render, screen, fireEvent, waitFor } from '@testing-library/react';
 import FileExplorer from '../../../components/explorer/FileExplorer';
 
+// Mock the file service
+jest.mock('../../../services/fileService', () => ({
+  fileService: {
+    getFileStructure: jest.fn().mockResolvedValue({
+      name: 'project',
+      path: 'project',
+      type: 'directory',
+      children: [
+        {
+          name: 'src',
+          path: 'project/src',
+          type: 'directory',
+          children: [
+            { name: 'main.py', path: 'project/src/main.py', type: 'file' },
+            { name: 'utils.py', path: 'project/src/utils.py', type: 'file' }
+          ]
+        }
+      ]
+    })
+  }
+}));
+
 describe('FileExplorer', () => {
-  it('renders the file structure', () => {
-    render(<FileExplorer />);
+  it('renders the file structure', async () => {
+    render(<FileExplorer onFileSelect={() => {}} />);
+    
+    // Wait for loading to complete
+    await waitFor(() => {
+      expect(screen.queryByText('Loading file structure...')).not.toBeInTheDocument();
+    });
     
     // Check for root directory
     expect(screen.getByText('project')).toBeInTheDocument();
     
     // Check for subdirectories
     expect(screen.getByText('src')).toBeInTheDocument();
-    expect(screen.getByText('tests')).toBeInTheDocument();
   });
 
-  it('expands and collapses directories', () => {
-    render(<FileExplorer />);
+  it('expands and collapses directories', async () => {
+    render(<FileExplorer onFileSelect={() => {}} />);
+    
+    // Wait for loading to complete
+    await waitFor(() => {
+      expect(screen.queryByText('Loading file structure...')).not.toBeInTheDocument();
+    });
     
     // Initially, files should not be visible
     expect(screen.queryByText('main.py')).not.toBeInTheDocument();
@@ -35,9 +66,14 @@ describe('FileExplorer', () => {
     expect(screen.queryByText('main.py')).not.toBeInTheDocument();
   });
 
-  it('calls onFileSelect when a file is clicked', () => {
+  it('calls onFileSelect when a file is clicked', async () => {
     const onFileSelect = jest.fn();
     render(<FileExplorer onFileSelect={onFileSelect} />);
+    
+    // Wait for loading to complete
+    await waitFor(() => {
+      expect(screen.queryByText('Loading file structure...')).not.toBeInTheDocument();
+    });
     
     // Expand src directory
     fireEvent.click(screen.getByText('src'));
