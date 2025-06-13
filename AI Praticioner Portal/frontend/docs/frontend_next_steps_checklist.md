@@ -32,4 +32,10 @@
 ## G. Future Features (Optional)
 - [ ] User Authentication: Prepare for login/logout and user state management.
 - [ ] Settings/Preferences: Add a user settings page for theme, editor config, etc.
-- [ ] Notifications/Toasts: Add a global notification system for user feedback. 
+- [ ] Notifications/Toasts: Add a global notification system for user feedback.
+
+---
+
+### Phase 1: Security & Stability
+- [x] Implement global ErrorBoundary component and test (complete, see devlog 2024-06-13)
+- [ ] Audit and improve input validation and frontend security checks 

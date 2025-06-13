@@ -73,4 +73,10 @@ export default defineConfig({
 
 ## Additional Notes
 - All E2E tests use mock data/services for frontend-only development.
-- For backend integration, update the app and Cypress config as needed. 
+- For backend integration, update the app and Cypress config as needed.
+
+---
+
+## Error Handling
+
+- The app is now wrapped in a global ErrorBoundary component for improved error handling and user experience. Unexpected errors will display a user-friendly message instead of breaking the UI. 

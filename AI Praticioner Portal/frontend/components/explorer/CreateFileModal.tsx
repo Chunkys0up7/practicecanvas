@@ -86,6 +86,8 @@ const CreateFileModal: React.FC<CreateFileModalProps> = ({
   const [fileName, setFileName] = useState('');
   const [selectedTemplate, setSelectedTemplate] = useState<FileTemplate | null>(null);
   const [searchTerm, setSearchTerm] = useState('');
+  const [error, setError] = useState('');
+  const [touched, setTouched] = useState(false);
 
   if (!isOpen) return null;
 
@@ -94,15 +96,29 @@ const CreateFileModal: React.FC<CreateFileModalProps> = ({
     template.description.toLowerCase().includes(searchTerm.toLowerCase())
   );
 
+  const validateFileName = (name: string): string => {
+    if (!name.trim()) {
+      return 'File name is required';
+    }
+    if (name.includes('/') || name.includes('\\')) {
+      return 'Invalid file name';
+    }
+    return '';
+  };
+
   const handleCreate = () => {
-    if (!fileName || !selectedTemplate) return;
-    
+    setTouched(true);
+    const validationError = validateFileName(fileName);
+    setError(validationError);
+    if (validationError || !selectedTemplate) return;
     const fullName = fileName.endsWith(`.${selectedTemplate.extension}`)
       ? fileName
       : `${fileName}.${selectedTemplate.extension}`;
-    
     onCreate(fullName, selectedTemplate.content);
     onClose();
+    setFileName('');
+    setError('');
+    setTouched(false);
   };
 
   return (
@@ -115,10 +131,15 @@ const CreateFileModal: React.FC<CreateFileModalProps> = ({
           <input
             type="text"
             value={fileName}
-            onChange={(e) => setFileName(e.target.value)}
+            onChange={(e) => {
+              setFileName(e.target.value);
+              setTouched(true);
+              setError(validateFileName(e.target.value));
+            }}
             className="w-full px-3 py-2 bg-gray-700 rounded border border-gray-600 focus:border-blue-500 focus:outline-none"
             placeholder="Enter file name"
           />
+          {touched && error && <p className="text-red-500 text-sm mt-1">{error}</p>}
         </div>
 
         <div className="mb-4">
@@ -160,7 +181,7 @@ const CreateFileModal: React.FC<CreateFileModalProps> = ({
           </button>
           <button
             onClick={handleCreate}
-            disabled={!fileName || !selectedTemplate}
+            disabled={!fileName || !selectedTemplate || !!error}
             className="px-4 py-2 bg-blue-500 text-white rounded hover:bg-blue-600 disabled:opacity-50 disabled:cursor-not-allowed"
           >
             Create
