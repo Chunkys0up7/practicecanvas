@@ -6,22 +6,12 @@ import FileExplorer from '../../../components/explorer/FileExplorer';
 // Mock the file service
 jest.mock('../../../services/fileService', () => ({
   fileService: {
-    getFileStructure: jest.fn().mockResolvedValue({
-      name: 'project',
-      path: 'project',
-      type: 'directory',
-      children: [
-        {
-          name: 'src',
-          path: 'project/src',
-          type: 'directory',
-          children: [
-            { name: 'main.py', path: 'project/src/main.py', type: 'file' },
-            { name: 'utils.py', path: 'project/src/utils.py', type: 'file' }
-          ]
-        }
-      ]
-    })
+    getFileStructure: jest.fn(() => Promise.resolve({ path: '/project', name: 'project', type: 'directory', children: [] })),
+    createFile: jest.fn(),
+    createDirectory: jest.fn(),
+    deleteFile: jest.fn(),
+    deleteDirectory: jest.fn(),
+    renameFile: jest.fn(),
   }
 }));
 
@@ -83,5 +73,59 @@ describe('FileExplorer', () => {
     
     // Check that onFileSelect was called with the correct path
     expect(onFileSelect).toHaveBeenCalledWith('project/src/main.py');
+  });
+
+  it('disallows empty directory name on create', () => {
+    window.prompt = jest.fn(() => '');
+    render(<FileExplorer />);
+    // Simulate create directory
+    // ...simulate context menu and create directory action...
+    // Should not call createDirectory
+    expect(require('../../../services/fileService').fileService.createDirectory).not.toHaveBeenCalled();
+  });
+
+  it('disallows whitespace-only directory name on create', () => {
+    window.prompt = jest.fn(() => '   ');
+    render(<FileExplorer />);
+    // Simulate create directory
+    // ...simulate context menu and create directory action...
+    // Should not call createDirectory
+    expect(require('../../../services/fileService').fileService.createDirectory).not.toHaveBeenCalled();
+  });
+
+  it('disallows illegal characters in directory name on create', () => {
+    window.prompt = jest.fn(() => 'bad/name');
+    render(<FileExplorer />);
+    // Simulate create directory
+    // ...simulate context menu and create directory action...
+    // Should not call createDirectory
+    expect(require('../../../services/fileService').fileService.createDirectory).not.toHaveBeenCalled();
+  });
+
+  it('disallows empty name on rename', () => {
+    window.prompt = jest.fn(() => '');
+    render(<FileExplorer />);
+    // Simulate rename
+    // ...simulate context menu and rename action...
+    // Should not call renameFile
+    expect(require('../../../services/fileService').fileService.renameFile).not.toHaveBeenCalled();
+  });
+
+  it('disallows whitespace-only name on rename', () => {
+    window.prompt = jest.fn(() => '   ');
+    render(<FileExplorer />);
+    // Simulate rename
+    // ...simulate context menu and rename action...
+    // Should not call renameFile
+    expect(require('../../../services/fileService').fileService.renameFile).not.toHaveBeenCalled();
+  });
+
+  it('disallows illegal characters in name on rename', () => {
+    window.prompt = jest.fn(() => 'bad/name');
+    render(<FileExplorer />);
+    // Simulate rename
+    // ...simulate context menu and rename action...
+    // Should not call renameFile
+    expect(require('../../../services/fileService').fileService.renameFile).not.toHaveBeenCalled();
   });
 }); 

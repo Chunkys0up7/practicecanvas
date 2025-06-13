@@ -99,12 +99,21 @@ const FileExplorer: React.FC<FileExplorerProps> = ({ onFileSelect }) => {
     }
   };
 
+  // Validation helper for names
+  const validateName = (name: string): string | null => {
+    if (!name || !name.trim()) return 'Name is required';
+    if (name.includes('/') || name.includes('\\')) return 'Invalid name: cannot contain / or \\';
+    return null;
+  };
+
   const handleCreateDirectory = async (parentPath: string) => {
     if (isOperationInProgress) return;
-    
     const name = prompt('Enter directory name:');
-    if (!name) return;
-
+    const validationError = validateName(name || '');
+    if (validationError) {
+      showToast(validationError, 'error');
+      return;
+    }
     const path = `${parentPath}/${name}`;
     setIsOperationInProgress(true);
     try {
@@ -143,10 +152,12 @@ const FileExplorer: React.FC<FileExplorerProps> = ({ onFileSelect }) => {
 
   const handleRename = async (oldPath: string, type: 'file' | 'directory') => {
     if (isOperationInProgress) return;
-    
     const newName = prompt('Enter new name:');
-    if (!newName) return;
-
+    const validationError = validateName(newName || '');
+    if (validationError) {
+      showToast(validationError, 'error');
+      return;
+    }
     const newPath = oldPath.substring(0, oldPath.lastIndexOf('/') + 1) + newName;
     setIsOperationInProgress(true);
     try {

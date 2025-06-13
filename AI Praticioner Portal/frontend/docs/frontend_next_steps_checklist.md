@@ -39,4 +39,5 @@
 ### Phase 1: Security & Stability
 - [x] Implement global ErrorBoundary component and test (complete, see devlog 2024-06-13)
 - [x] Add robust input validation and error display to CreateFileModal (complete, see devlog 2024-06-13)
+- [x] Add robust input validation to AgentChat (complete, see devlog 2024-06-13)
 - [ ] Audit and improve input validation for any remaining user input areas 

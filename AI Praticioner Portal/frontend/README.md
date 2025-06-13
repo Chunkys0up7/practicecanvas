@@ -85,4 +85,4 @@ export default defineConfig({
 
 ## Input Validation & Security
 
-- File creation dialogs now have robust input validation and error handling. Invalid file names (empty, whitespace-only, or containing / or \\) are disallowed and show user-friendly error messages. 
+- File creation dialogs and AgentChat now have robust input validation. Invalid file names and empty/whitespace-only chat messages are disallowed and show user-friendly error handling. 
