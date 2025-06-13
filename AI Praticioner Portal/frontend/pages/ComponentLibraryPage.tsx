@@ -1,4 +1,3 @@
-
 import React, { useEffect, useState, useMemo } from 'react';
 import { AIComponent, ComponentType } from '../types';
 import { fetchComponents } from '../services/mockApiService';
@@ -14,6 +13,7 @@ const ComponentLibraryPage: React.FC = () => {
   const [searchTerm, setSearchTerm] = useState('');
   const [selectedCategory, setSelectedCategory] = useState<string>('All');
   const [selectedType, setSelectedType] = useState<ComponentType | 'All'>('All');
+  const [error, setError] = useState<string | null>(null);
 
   useEffect(() => {
     const loadComponents = async () => {
@@ -22,8 +22,10 @@ const ComponentLibraryPage: React.FC = () => {
         const data = await fetchComponents();
         setComponents(data);
         setFilteredComponents(data);
+        setError(null);
       } catch (error) {
         console.error("Failed to fetch components:", error);
+        setError('Failed to load components. Please try again later.');
       } finally {
         setIsLoading(false);
       }
@@ -68,6 +70,11 @@ const ComponentLibraryPage: React.FC = () => {
 
   return (
     <div className="space-y-6">
+      {error && (
+        <div className="bg-red-600 text-white px-4 py-2 mb-2 rounded shadow text-center">
+          {error}
+        </div>
+      )}
       <h1 className="text-3xl font-bold text-white">Component Library</h1>
 
       <div className="bg-gray-800 p-4 rounded-lg shadow sticky top-0 z-10">

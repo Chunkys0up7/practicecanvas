@@ -12,15 +12,10 @@ interface EditorLayoutProps {
 const EditorLayout: React.FC<EditorLayoutProps> = ({ onFileSelect, children }) => {
   const [activeTab, setActiveTab] = useState<'chat' | 'analysis' | 'tools'>('chat');
 
-  // Logging for debugging
-  console.log('EditorLayout render: children =', children);
-  console.log('Rendering main editor area', children);
-  console.log('Rendering right sidebar, activeTab =', activeTab);
-
   return (
-    <div className="h-screen flex">
+    <div className="h-screen flex flex-col md:flex-row">
       {/* Left Sidebar */}
-      <div className="w-64 bg-gray-800 border-r border-gray-700 flex flex-col">
+      <div className="w-full md:w-64 bg-gray-800 border-b md:border-b-0 md:border-r border-gray-700 flex-shrink-0 flex flex-col max-h-60 md:max-h-full overflow-y-auto">
         <div className="p-4 border-b border-gray-700">
           <h2 className="text-lg font-semibold">Explorer</h2>
         </div>
@@ -30,14 +25,14 @@ const EditorLayout: React.FC<EditorLayoutProps> = ({ onFileSelect, children }) =
       </div>
 
       {/* Main Editor Area */}
-      <div className="flex-1 flex flex-col">
-        <div className="flex-1">
+      <div className="flex-1 flex flex-col min-h-0">
+        <div className="flex-1 min-h-0">
           {children}
         </div>
       </div>
 
       {/* Right Sidebar */}
-      <div className="w-80 bg-gray-800 border-l border-gray-700 flex flex-col">
+      <div className="w-full md:w-80 bg-gray-800 border-t md:border-t-0 md:border-l border-gray-700 flex-shrink-0 flex flex-col max-h-60 md:max-h-full overflow-y-auto">
         {/* Tabs */}
         <div className="flex border-b border-gray-700">
           <button

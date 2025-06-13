@@ -1,0 +1,8 @@
+{
+  "dependencies": {
+    "diff2html": "^3.4.51"
+  },
+  "devDependencies": {
+    "cypress": "^14.4.1"
+  }
+}

@@ -1,5 +1,7 @@
-import React from 'react';
+import React, { useState } from 'react';
 import { useAgent } from '../../contexts/AgentContext';
+import { generateCode } from '../../services/geminiService';
+import { html as diff2htmlHtml } from 'diff2html';
 
 interface Tool {
   name: string;
@@ -10,6 +12,12 @@ interface Tool {
 
 const AgentTools: React.FC = () => {
   const { currentAgent, isAgentActive } = useAgent();
+  const [showTestGenModal, setShowTestGenModal] = useState(false);
+  const [testGenPrompt, setTestGenPrompt] = useState('');
+  const [testGenLoading, setTestGenLoading] = useState(false);
+  const [testGenResult, setTestGenResult] = useState('');
+  const [showDiffModal, setShowDiffModal] = useState(false);
+  const [diffHtml, setDiffHtml] = useState('');
 
   const getTools = (): Tool[] => {
     if (!currentAgent) return [];
@@ -25,7 +33,7 @@ const AgentTools: React.FC = () => {
         name: 'Generate Tests',
         description: 'Generate unit tests for the current file',
         icon: '🧪',
-        action: () => console.log('Generate tests')
+        action: () => setShowTestGenModal(true)
       },
       {
         name: 'Documentation',
@@ -150,6 +158,92 @@ const AgentTools: React.FC = () => {
           ))}
         </div>
       </div>
+
+      {/* Test Generation Modal */}
+      {showTestGenModal && (
+        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
+          <div className="bg-gray-800 rounded-lg shadow-lg w-full max-w-lg p-6">
+            <h2 className="text-lg font-bold mb-2 text-white">Generate Test Suite</h2>
+            <p className="text-gray-400 mb-2">Describe the requirements for the test suite:</p>
+            <textarea
+              className="w-full h-24 p-2 rounded bg-gray-700 text-white mb-2"
+              value={testGenPrompt}
+              onChange={e => setTestGenPrompt(e.target.value)}
+              placeholder="e.g. The function should return the sum of two numbers, handle negative inputs, and throw on non-numeric input."
+              disabled={testGenLoading}
+            />
+            <div className="flex space-x-2 mb-2">
+              <button
+                className="bg-blue-600 hover:bg-blue-700 text-white px-4 py-1 rounded"
+                onClick={async () => {
+                  setTestGenLoading(true);
+                  setTestGenResult('');
+                  const { code } = await generateCode({
+                    prompt: `Write a Python unittest or pytest suite for the following requirements: ${testGenPrompt}`,
+                    language: 'Python',
+                  });
+                  setTestGenResult(code);
+                  setTestGenLoading(false);
+                }}
+                disabled={testGenLoading || !testGenPrompt.trim()}
+              >
+                {testGenLoading ? 'Generating...' : 'Generate'}
+              </button>
+              <button
+                className="bg-gray-600 hover:bg-gray-700 text-white px-4 py-1 rounded"
+                onClick={() => setShowTestGenModal(false)}
+                disabled={testGenLoading}
+              >Cancel</button>
+            </div>
+            {testGenResult && (
+              <div className="bg-gray-900 rounded p-2 mb-2 text-xs text-green-300 whitespace-pre overflow-x-auto max-h-48">
+                {testGenResult}
+              </div>
+            )}
+            {testGenResult && (
+              <button
+                className="bg-green-600 hover:bg-green-700 text-white px-4 py-1 rounded"
+                onClick={() => {
+                  // Show diff modal for approval
+                  // For demo, compare with empty string (replace with current test file content if available)
+                  const oldCode = '';
+                  const newCode = testGenResult;
+                  const diffString = `--- old\n+++ new\n@@\n-${oldCode}\n+${newCode}`;
+                  const diffHtmlString = diff2htmlHtml(diffString, { drawFileList: false, outputFormat: 'side-by-side' });
+                  setDiffHtml(diffHtmlString);
+                  setShowDiffModal(true);
+                }}
+              >Review & Insert</button>
+            )}
+          </div>
+        </div>
+      )}
+
+      {showDiffModal && (
+        <div className="fixed inset-0 bg-black bg-opacity-60 flex items-center justify-center z-50">
+          <div className="bg-gray-900 rounded-lg shadow-lg w-full max-w-3xl p-6">
+            <h2 className="text-lg font-bold mb-2 text-white">Review AI-Generated Test Diff</h2>
+            <div className="overflow-x-auto mb-4" style={{ maxHeight: '400px' }}>
+              <div dangerouslySetInnerHTML={{ __html: diffHtml }} />
+            </div>
+            <div className="flex space-x-2">
+              <button
+                className="bg-green-600 hover:bg-green-700 text-white px-4 py-1 rounded"
+                onClick={() => {
+                  // Approve: copy to clipboard and close
+                  navigator.clipboard.writeText(testGenResult);
+                  setShowDiffModal(false);
+                  setShowTestGenModal(false);
+                }}
+              >Approve & Copy</button>
+              <button
+                className="bg-red-600 hover:bg-red-700 text-white px-4 py-1 rounded"
+                onClick={() => setShowDiffModal(false)}
+              >Reject</button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 };

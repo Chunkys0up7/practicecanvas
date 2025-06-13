@@ -1,4 +1,3 @@
-
 import React, { useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { Project } from '../types';
@@ -15,6 +14,7 @@ const DashboardPage: React.FC = () => {
   const [isLoading, setIsLoading] = useState(true);
   const [searchTerm, setSearchTerm] = useState('');
   const [activeFilter, setActiveFilter] = useState('All');
+  const [error, setError] = useState<string | null>(null);
   const navigate = useNavigate();
 
   useEffect(() => {
@@ -24,9 +24,10 @@ const DashboardPage: React.FC = () => {
         const data = await fetchProjects();
         setProjects(data);
         setFilteredProjects(data);
+        setError(null);
       } catch (error) {
         console.error("Failed to fetch projects:", error);
-        // Handle error state in UI if necessary
+        setError('Failed to load projects. Please try again later.');
       } finally {
         setIsLoading(false);
       }
@@ -67,6 +68,11 @@ const DashboardPage: React.FC = () => {
 
   return (
     <div className="space-y-6">
+      {error && (
+        <div className="bg-red-600 text-white px-4 py-2 mb-2 rounded shadow text-center">
+          {error}
+        </div>
+      )}
       <div className="flex flex-col sm:flex-row justify-between items-center gap-4">
         <h1 className="text-3xl font-bold text-white">Dashboard</h1>
         <Button variant="primary" onClick={() => alert('Navigate to New Project Creation')} leftIcon={<PlusCircle size={18}/>}>

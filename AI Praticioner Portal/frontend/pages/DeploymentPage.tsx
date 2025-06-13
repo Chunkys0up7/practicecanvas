@@ -1,4 +1,3 @@
-
 import React, { useEffect, useState } from 'react';
 import { DeployedEnvironment, DeploymentLog } from '../types';
 import { fetchDeployedEnvironments, fetchDeploymentLogs, deployToEnvironment as apiDeployToEnvironment } from '../services/mockApiService';

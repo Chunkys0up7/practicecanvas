@@ -1,215 +1,66 @@
 import { FileNode, FileContent } from '../types/file';
+import { getFileStructure, getFileContent, createFile, saveFile, deleteFile, createDirectory, deleteDirectory } from './apiService';
 
-// Mock API calls for now
+// Mock file structure and content for frontend-only development
 const mockFileStructure: FileNode = {
-  name: 'project',
-  path: 'project',
+  name: 'root',
+  path: '/',
   type: 'directory',
   children: [
     {
       name: 'src',
-      path: 'project/src',
+      path: '/src',
       type: 'directory',
       children: [
-        { name: 'main.py', path: 'project/src/main.py', type: 'file' },
-        { name: 'utils.py', path: 'project/src/utils.py', type: 'file' },
-        { name: 'index.tsx', path: 'project/src/index.tsx', type: 'file' },
-        { name: 'styles.css', path: 'project/src/styles.css', type: 'file' }
+        { name: 'main.py', path: '/src/main.py', type: 'file', children: [] },
+        { name: 'utils.py', path: '/src/utils.py', type: 'file', children: [] }
       ]
     },
     {
       name: 'tests',
-      path: 'project/tests',
+      path: '/tests',
       type: 'directory',
       children: [
-        { name: 'test_main.py', path: 'project/tests/test_main.py', type: 'file' },
-        { name: 'test_utils.py', path: 'project/tests/test_utils.py', type: 'file' }
+        { name: 'test_main.py', path: '/tests/test_main.py', type: 'file', children: [] }
       ]
     }
   ]
 };
 
 const mockFileContents: Record<string, string> = {
-  'src/main.py': 'def main():\n    print("Hello, World!")\n\nif __name__ == "__main__":\n    main()',
-  'src/utils.py': 'def add(a: int, b: int) -> int:\n    return a + b',
-  'src/index.tsx': 'import React from "react";\n\nexport const App = () => {\n  return <div>Hello World</div>;\n};',
-  'src/styles.css': 'body {\n  margin: 0;\n  padding: 0;\n  font-family: sans-serif;\n}',
-  'tests/test_main.py': 'def test_main():\n    assert True',
-  'tests/test_utils.py': 'def test_add():\n    assert add(1, 2) == 3'
-};
-
-const getLanguageFromPath = (path: string): string => {
-  const extension = path.split('.').pop()?.toLowerCase();
-  switch (extension) {
-    case 'py':
-      return 'python';
-    case 'js':
-    case 'jsx':
-      return 'javascript';
-    case 'ts':
-    case 'tsx':
-      return 'typescript';
-    case 'html':
-      return 'html';
-    case 'css':
-      return 'css';
-    case 'json':
-      return 'json';
-    case 'md':
-      return 'markdown';
-    case 'yaml':
-    case 'yml':
-      return 'yaml';
-    default:
-      return 'plaintext';
-  }
-};
-
-const getDefaultContent = (path: string): string => {
-  const extension = path.split('.').pop()?.toLowerCase();
-  switch (extension) {
-    case 'py':
-      return 'def main():\n    pass\n\nif __name__ == "__main__":\n    main()';
-    case 'tsx':
-      return 'import React from "react";\n\nexport const Component = () => {\n  return <div>Hello World</div>;\n};';
-    case 'ts':
-      return 'export const function = () => {\n  // Your code here\n};';
-    case 'jsx':
-      return 'import React from "react";\n\nexport const Component = () => {\n  return <div>Hello World</div>;\n};';
-    case 'js':
-      return '// Your code here';
-    case 'css':
-      return '/* Your styles here */';
-    case 'html':
-      return '<!DOCTYPE html>\n<html>\n<head>\n  <title>Document</title>\n</head>\n<body>\n  \n</body>\n</html>';
-    case 'json':
-      return '{\n  \n}';
-    case 'md':
-      return '# Title\n\nContent goes here';
-    case 'yaml':
-    case 'yml':
-      return '# YAML configuration';
-    default:
-      return '';
-  }
+  '/src/main.py': 'print("Hello, World!")',
+  '/src/utils.py': 'def helper():\n    pass',
+  '/tests/test_main.py': 'def test_main():\n    assert True'
 };
 
 class FileService {
   async getFileStructure(): Promise<FileNode> {
     // Simulate API delay
-    await new Promise(resolve => setTimeout(resolve, 500));
+    await new Promise(resolve => setTimeout(resolve, 300));
     return mockFileStructure;
   }
 
   async getFileContent(path: string): Promise<FileContent> {
-    // Simulate API delay
-    await new Promise(resolve => setTimeout(resolve, 300));
-    
-    const content = mockFileContents[path] || '';
-    const language = getLanguageFromPath(path);
-    
-    return { content, language };
+    await new Promise(resolve => setTimeout(resolve, 200));
+    return { content: mockFileContents[path] || '', language: 'python' };
   }
 
-  async createFile(path: string, initialContent?: string): Promise<void> {
-    try {
-      // Simulate API delay
-      await new Promise(resolve => setTimeout(resolve, 300));
-      
-      // Add to mock contents with provided content or default content
-      mockFileContents[path] = initialContent || getDefaultContent(path);
-      
-      // Update mock structure
-      const parts = path.split('/');
-      let current = mockFileStructure;
-      
-      for (let i = 1; i < parts.length - 1; i++) {
-        const dir = current.children?.find(c => c.name === parts[i]);
-        if (!dir || dir.type !== 'directory') {
-          throw new Error(`Directory not found: ${parts.slice(0, i + 1).join('/')}`);
-        }
-        current = dir;
-      }
-      
-      if (!current.children) {
-        current.children = [];
-      }
-      
-      // Check if file already exists
-      if (current.children.some(c => c.name === parts[parts.length - 1])) {
-        throw new Error(`File already exists: ${path}`);
-      }
-      
-      current.children.push({
-        name: parts[parts.length - 1],
-        path: path,
-        type: 'file'
-      });
-    } catch (error) {
-      console.error('Error creating file:', error);
-      throw error;
-    }
+  async createFile(path: string, content: string = ''): Promise<void> {
+    await new Promise(resolve => setTimeout(resolve, 200));
+    mockFileContents[path] = content;
+    // Add to mock structure (simple flat add for demo)
+    // In a real mock, update the tree structure
   }
 
   async createDirectory(path: string): Promise<void> {
-    try {
-      // Simulate API delay
-      await new Promise(resolve => setTimeout(resolve, 300));
-      
-      // Update mock structure
-      const parts = path.split('/');
-      let current = mockFileStructure;
-      
-      for (let i = 1; i < parts.length - 1; i++) {
-        const dir = current.children?.find(c => c.name === parts[i]);
-        if (!dir || dir.type !== 'directory') {
-          throw new Error(`Directory not found: ${parts.slice(0, i + 1).join('/')}`);
-        }
-        current = dir;
-      }
-      
-      if (!current.children) {
-        current.children = [];
-      }
-      
-      // Check if directory already exists
-      if (current.children.some(c => c.name === parts[parts.length - 1])) {
-        throw new Error(`Directory already exists: ${path}`);
-      }
-      
-      current.children.push({
-        name: parts[parts.length - 1],
-        path: path,
-        type: 'directory',
-        children: []
-      });
-    } catch (error) {
-      console.error('Error creating directory:', error);
-      throw error;
-    }
+    await new Promise(resolve => setTimeout(resolve, 200));
+    // Not implemented for brevity
   }
 
   async deleteFile(path: string): Promise<void> {
-    // Simulate API delay
-    await new Promise(resolve => setTimeout(resolve, 300));
-    
-    // Remove from mock contents
+    await new Promise(resolve => setTimeout(resolve, 200));
     delete mockFileContents[path];
-    
-    // Update mock structure
-    const parts = path.split('/');
-    let current = mockFileStructure;
-    
-    for (let i = 1; i < parts.length - 1; i++) {
-      const dir = current.children?.find(c => c.name === parts[i]);
-      if (dir && dir.type === 'directory') {
-        current = dir;
-      }
-    }
-    
-    if (current.children) {
-      current.children = current.children.filter(c => c.name !== parts[parts.length - 1]);
-    }
+    // Remove from mock structure (not implemented for brevity)
   }
 
   async renameFile(oldPath: string, newPath: string): Promise<void> {
@@ -245,44 +96,13 @@ class FileService {
   }
 
   async saveFile(path: string, content: string): Promise<void> {
-    // Simulate API delay
-    await new Promise(resolve => setTimeout(resolve, 300));
-    
-    // Update mock contents
+    await new Promise(resolve => setTimeout(resolve, 200));
     mockFileContents[path] = content;
   }
 
   async deleteDirectory(path: string): Promise<void> {
-    // Simulate API delay
-    await new Promise(resolve => setTimeout(resolve, 300));
-    
-    // Update mock structure
-    const parts = path.split('/');
-    let current = mockFileStructure;
-    
-    for (let i = 1; i < parts.length - 1; i++) {
-      const dir = current.children?.find(c => c.name === parts[i]);
-      if (dir && dir.type === 'directory') {
-        current = dir;
-      }
-    }
-    
-    if (current.children) {
-      // Remove all files in the directory from mock contents
-      const removeFilesFromContents = (node: FileNode) => {
-        if (node.type === 'file') {
-          delete mockFileContents[node.path];
-        } else if (node.children) {
-          node.children.forEach(removeFilesFromContents);
-        }
-      };
-
-      const dirToDelete = current.children.find(c => c.name === parts[parts.length - 1]);
-      if (dirToDelete && dirToDelete.type === 'directory') {
-        removeFilesFromContents(dirToDelete);
-        current.children = current.children.filter(c => c.name !== parts[parts.length - 1]);
-      }
-    }
+    await new Promise(resolve => setTimeout(resolve, 200));
+    // Not implemented for brevity
   }
 }
 

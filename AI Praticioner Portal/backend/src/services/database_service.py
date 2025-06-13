@@ -20,9 +20,11 @@ class DatabaseService:
         try:
             # Use provided URL or environment variable
             if db_url is None:
-                db_url = os.getenv("DATABASE_URL", "sqlite://")
+                db_url = os.getenv("DATABASE_URL")
+                if not db_url:
+                    raise DatabaseError("DATABASE_URL environment variable not set")
             
-            self.engine = create_engine(db_url)
+            self.engine = create_engine(db_url, echo=True)
             self.SessionLocal = sessionmaker(autocommit=False, autoflush=False, bind=self.engine)
             
             # Create tables if they don't exist
@@ -35,16 +37,15 @@ class DatabaseService:
                     cursor = dbapi_connection.cursor()
                     cursor.execute("PRAGMA foreign_keys=ON")
                     cursor.close()
+            
+
         except SQLAlchemyError as e:
             raise DatabaseError(f"Failed to initialize database connection: {str(e)}") from e
 
     def get_db(self) -> Session:
         """Get a database session"""
         db = self.SessionLocal()
-        try:
-            yield db
-        finally:
-            db.close()
+        return db
 
     def store_user(self, user_data: Dict[str, Any]) -> bool:
         """
@@ -140,12 +141,13 @@ class DatabaseService:
         except SQLAlchemyError as e:
             raise DatabaseError(f"Failed to list users: {str(e)}")
 
-    def search_users(self, query: str, page: int = 1, page_size: int = 10) -> Dict[str, Any]:
+    def search_users(self, query: str, roles: Optional[List[str]] = None, page: int = 1, page_size: int = 10) -> Dict[str, Any]:
         """
         Search users by username or role
 
         Args:
-            query: Search term to match against username or roles
+            query: Search term to match against username
+            roles: List of roles to filter by
             page: Page number (1-based)
             page_size: Number of items per page
 
@@ -160,14 +162,22 @@ class DatabaseService:
             with self.SessionLocal() as db:
                 query_lower = query.lower()
                 
-                # Search by username or roles
-                users = db.query(User).filter(
-                    (User.username.ilike(f"%{query_lower}%")) |
-                    (User.roles.cast(String).ilike(f"%{query_lower}%"))
-                ).all()
+                # Build query
+                query = db.query(User)
                 
-                total = len(users)
-                users = users[(page - 1) * page_size:page * page_size]
+                # Add username filter if query is provided
+                if query:
+                    query = query.filter(User.username.ilike(f"%{query_lower}%"))
+                
+                # Add roles filter if roles are provided
+                if roles:
+                    query = query.filter(User.roles.contains(roles))
+                
+                # Get total count
+                total = query.count()
+                
+                # Apply pagination
+                users = query.offset((page - 1) * page_size).limit(page_size).all()
                 
                 return {
                     "total": total,

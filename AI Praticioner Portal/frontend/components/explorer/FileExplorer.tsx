@@ -20,7 +20,6 @@ interface ToastState {
 }
 
 const FileExplorer: React.FC<FileExplorerProps> = ({ onFileSelect }) => {
-  console.log('FileExplorer: onFileSelect prop =', onFileSelect);
   const [expandedDirs, setExpandedDirs] = useState<Set<string>>(new Set());
   const [fileStructure, setFileStructure] = useState<FileNode | null>(null);
   const [isLoading, setIsLoading] = useState(true);
@@ -29,6 +28,7 @@ const FileExplorer: React.FC<FileExplorerProps> = ({ onFileSelect }) => {
   const [isOperationInProgress, setIsOperationInProgress] = useState(false);
   const [isCreateFileModalOpen, setIsCreateFileModalOpen] = useState(false);
   const [createFileParentPath, setCreateFileParentPath] = useState('');
+  const [error, setError] = useState<string | null>(null);
 
   useEffect(() => {
     loadFileStructure();
@@ -49,6 +49,7 @@ const FileExplorer: React.FC<FileExplorerProps> = ({ onFileSelect }) => {
       }
     } catch (error) {
       console.error('Error loading file structure:', error);
+      setError(error instanceof Error ? error.message : 'Failed to load file structure');
       showToast('Failed to load file structure', 'error');
     } finally {
       setIsLoading(false);
@@ -204,7 +205,6 @@ const FileExplorer: React.FC<FileExplorerProps> = ({ onFileSelect }) => {
         tabIndex={0}
         role="button"
         onClick={() => {
-          console.log('File node clicked:', node.path);
           onFileSelect?.(node.path);
         }}
         onContextMenu={(e) => handleContextMenu(e, node)}
@@ -233,7 +233,21 @@ const FileExplorer: React.FC<FileExplorerProps> = ({ onFileSelect }) => {
 
   return (
     <div className="p-2 relative" data-testid="file-explorer">
-      {renderFileNode(fileStructure)}
+      {isLoading ? (
+        <div className="text-gray-400">Loading...</div>
+      ) : error ? (
+        <div className="text-red-400 flex flex-col items-center">
+          <span>{error}</span>
+          <button
+            className="mt-2 px-3 py-1 bg-red-600 text-white rounded hover:bg-red-700"
+            onClick={loadFileStructure}
+          >
+            Retry
+          </button>
+        </div>
+      ) : (
+        fileStructure ? renderFileNode(fileStructure) : null
+      )}
       {contextMenu && (
         <div
           className="fixed bg-gray-800 border border-gray-700 rounded shadow-lg py-2 z-50"
