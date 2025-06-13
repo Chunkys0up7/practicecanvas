@@ -80,3 +80,9 @@ export default defineConfig({
 ## Error Handling
 
 - The app is now wrapped in a global ErrorBoundary component for improved error handling and user experience. Unexpected errors will display a user-friendly message instead of breaking the UI. 
+
+---
+
+## Input Validation & Security
+
+- File creation dialogs now have robust input validation and error handling. Invalid file names (empty, whitespace-only, or containing / or \\) are disallowed and show user-friendly error messages. 
